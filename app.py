@@ -3,33 +3,47 @@ import pandas as pd
 import seaborn as sb
 import matplotlib.pyplot as plt
 
-st.title("🍽️ Zomato Analysis – Top 10 Restaurants by Rating")
+st.set_page_config(layout="wide")
+st.title("🍽️ Zomato Interactive Analysis Dashboard")
 
 # Load dataset
 df = pd.read_csv("Zomato_Live.csv")
 
-# Show unique locations
-st.write("### Available Locations:")
-st.write(df.location.unique())
+# Sidebar filters
+st.sidebar.header("🔍 Filters")
 
-# Location input using dropdown
-location = st.selectbox("Select Location:", sorted(df.location.unique()))
+# Location dropdown
+location = st.sidebar.selectbox("📍 Select Location", sorted(df.location.unique()))
 
-# Filter location data
-lo = df[df.location == location]
+# Top N dropdown
+top_n = st.sidebar.selectbox("🔢 Show Top Restaurants", [5, 10, 15, 20], index=1)
 
-# Group and get top restaurants
+# Sorting dropdown
+sort_by = st.sidebar.selectbox("📊 Sort By", ["rate", "approx_cost"])
+
+# Restaurant name search
+search_text = st.sidebar.text_input("🔎 Search Restaurant Name (optional)").lower()
+
+# Filter dataset
+filtered_df = df[df.location == location]
+
+if search_text:
+    filtered_df = filtered_df[filtered_df['name'].str.lower().str.contains(search_text)]
+
+# Group & sort
 gr = (
-    lo.groupby('name')[['rate', 'approx_cost']]
+    filtered_df.groupby('name')[['rate', 'approx_cost']]
     .mean()
-    .nlargest(10, 'rate')
+    .sort_values(by=sort_by, ascending=False)
+    .head(top_n)
     .reset_index()
 )
 
-# Plot
-st.write(f"### Top 10 Restaurants in {location} by Rating")
+# Display selected info
+st.subheader(f"📍 Top {top_n} Restaurants in **{location}** Sorted by **{sort_by.capitalize()}**")
 
-fig, ax = plt.subplots(figsize=(12, 6))
-sb.barplot(data=gr, x='name', y='approx_cost', palette='summer', ax=ax)
+# Plot
+fig, ax = plt.subplots(figsize=(14, 7))
+sb.barplot(data=gr, x='name', y=sort_by, palette='viridis', ax=ax)
 plt.xticks(rotation=45, ha='right')
-st.pyplot(fig)
+plt
