@@ -3,52 +3,32 @@ import pandas as pd
 import seaborn as sb
 import matplotlib.pyplot as plt
 
-st.set_page_config(layout="wide")
-st.title("🍽️ Zomato Dashboard – Interactive Dropdowns Only")
+st.title("🍽️ Zomato Analysis – Top 10 Restaurants by Rating")
 
-# Load dataset
+# Load Zomato Live Dataset
 df = pd.read_csv("Zomato_Live.csv")
 
-# --- SIDEBAR DROPDOWN CONTROLS ---
-st.sidebar.header("🔽 Dashboard Filters")
+# Dropdown for location (replacing input())
+location = st.selectbox("Select Location:", sorted(df.location.unique()))
 
-# Dropdown 1 → Select Location
-location = st.sidebar.selectbox("📍 Select Location", sorted(df.location.unique()))
+# Filter based on selected location
+lo = df[df.location == location]
 
-# Dropdown 2 → Select metric to visualize
-metric = st.sidebar.selectbox(
-    "📊 Select Metric to Display",
-    ["rate", "approx_cost"]
-)
-
-# Dropdown 3 → Select number of restaurants
-top_n = st.sidebar.selectbox(
-    "🔢 Select Top N Restaurants",
-    [5, 10, 15, 20],
-    index=1
-)
-
-# --- FILTERING AND GROUPING ---
-filtered = df[df.location == location]
-
+# Grouping: top 10 by rating
 gr = (
-    filtered.groupby("name")[[ "rate", "approx_cost" ]]
+    lo.groupby('name')[['rate', 'approx_cost']]
     .mean()
-    .sort_values(by=metric, ascending=False)
-    .head(top_n)
+    .nlargest(10, 'rate')
     .reset_index()
 )
 
-# --- HEADER ---
-st.subheader(
-    f"📍 Top {top_n} Restaurants in **{location}** by **{metric}**"
-)
+# Plot the bar chart
+st.subheader(f"Top 10 Restaurants in {location} by Rating")
 
-# --- PLOT ---
-fig, ax = plt.subplots(figsize=(14, 7))
-sb.barplot(data=gr, x='name', y=metric, palette='summer', ax=ax)
+fig, ax = plt.subplots(figsize=(16, 6))
+sb.barplot(x=gr['name'], y=gr['approx_cost'], palette='summer', ax=ax)
 plt.xticks(rotation=45, ha='right')
+plt.ylabel("Approx Cost for Two")
 plt.xlabel("Restaurant Name")
-plt.ylabel(metric.replace("_", " ").title())
 
 st.pyplot(fig)
