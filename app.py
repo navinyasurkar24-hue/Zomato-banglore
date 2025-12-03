@@ -11,7 +11,7 @@ st.title("🍽️ Zomato Restaurant Rating & Cost Analysis")
 # Load Data
 @st.cache_data
 def load_data():
-    df = pd.read_csv("../Datasets/zomato.csv")
+    df = pd.read_csv("Zomato_Live.csv")
 
     # Drop unwanted columns
     df = df.drop(
