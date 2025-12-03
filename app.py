@@ -4,46 +4,51 @@ import seaborn as sb
 import matplotlib.pyplot as plt
 
 st.set_page_config(layout="wide")
-st.title("🍽️ Zomato Interactive Analysis Dashboard")
+st.title("🍽️ Zomato Dashboard – Interactive Dropdowns Only")
 
 # Load dataset
 df = pd.read_csv("Zomato_Live.csv")
 
-# Sidebar filters
-st.sidebar.header("🔍 Filters")
+# --- SIDEBAR DROPDOWN CONTROLS ---
+st.sidebar.header("🔽 Dashboard Filters")
 
-# Location dropdown
+# Dropdown 1 → Select Location
 location = st.sidebar.selectbox("📍 Select Location", sorted(df.location.unique()))
 
-# Top N dropdown
-top_n = st.sidebar.selectbox("🔢 Show Top Restaurants", [5, 10, 15, 20], index=1)
+# Dropdown 2 → Select metric to visualize
+metric = st.sidebar.selectbox(
+    "📊 Select Metric to Display",
+    ["rate", "approx_cost"]
+)
 
-# Sorting dropdown
-sort_by = st.sidebar.selectbox("📊 Sort By", ["rate", "approx_cost"])
+# Dropdown 3 → Select number of restaurants
+top_n = st.sidebar.selectbox(
+    "🔢 Select Top N Restaurants",
+    [5, 10, 15, 20],
+    index=1
+)
 
-# Restaurant name search
-search_text = st.sidebar.text_input("🔎 Search Restaurant Name (optional)").lower()
+# --- FILTERING AND GROUPING ---
+filtered = df[df.location == location]
 
-# Filter dataset
-filtered_df = df[df.location == location]
-
-if search_text:
-    filtered_df = filtered_df[filtered_df['name'].str.lower().str.contains(search_text)]
-
-# Group & sort
 gr = (
-    filtered_df.groupby('name')[['rate', 'approx_cost']]
+    filtered.groupby("name")[[ "rate", "approx_cost" ]]
     .mean()
-    .sort_values(by=sort_by, ascending=False)
+    .sort_values(by=metric, ascending=False)
     .head(top_n)
     .reset_index()
 )
 
-# Display selected info
-st.subheader(f"📍 Top {top_n} Restaurants in **{location}** Sorted by **{sort_by.capitalize()}**")
+# --- HEADER ---
+st.subheader(
+    f"📍 Top {top_n} Restaurants in **{location}** by **{metric}**"
+)
 
-# Plot
+# --- PLOT ---
 fig, ax = plt.subplots(figsize=(14, 7))
-sb.barplot(data=gr, x='name', y=sort_by, palette='viridis', ax=ax)
+sb.barplot(data=gr, x='name', y=metric, palette='summer', ax=ax)
 plt.xticks(rotation=45, ha='right')
-plt
+plt.xlabel("Restaurant Name")
+plt.ylabel(metric.replace("_", " ").title())
+
+st.pyplot(fig)
